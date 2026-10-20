@@ -13,8 +13,15 @@
 <a href="lesson-2.html">Урок 2</a>
 </div></nav>
 <main>
+$if(videoid)$
+<div class="video-wrap" id="video-wrap">
+<label class="video-pin"><input type="checkbox" id="video-pin"> Закрепить видео</label>
+<div class="video-frame"><iframe src="https://rutube.ru/play/embed/$videoid$" title="Видео урока" allow="clipboard-write; autoplay" allowfullscreen frameborder="0"></iframe></div>
+</div>
+$endif$
 $body$
 </main>
 <script src="assets/quiz.js"></script>
+<script src="assets/video.js"></script>
 </body>
 </html>
