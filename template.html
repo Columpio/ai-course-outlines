@@ -3,17 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>$pagetitle$ — Курс по ИИ</title>
+<title>$title$ — Курс по ИИ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600;700&display=swap&subset=cyrillic" rel="stylesheet">
+<link rel="icon" href="assets/art/rose.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <header class="site-header" id="site-header"></header>
+<section class="lesson-hero" id="hero">
+<div class="hero-inner">
+<div>
+<p class="eyebrow">Урок $n$</p>
+<h1>$title$</h1>
+<p class="lead">$lead$</p>
+</div>
+<img class="hero-art" src="assets/art/lesson-$n$.svg" alt="">
+</div>
+</section>
 <div class="layout">
 <main>
-$if(videoid)$
+$if(video)$
 <div class="video-wrap" id="video-wrap">
 <label class="video-pin"><input type="checkbox" id="video-pin"> Закрепить видео вверху экрана</label>
-<div class="video-frame"><iframe src="https://rutube.ru/play/embed/$videoid$" title="Видео урока" allow="clipboard-write; autoplay" allowfullscreen frameborder="0"></iframe></div>
+<div class="video-frame"><iframe src="https://rutube.ru/play/embed/$video$" title="Видео урока" allow="clipboard-write; autoplay" allowfullscreen frameborder="0"></iframe></div>
 </div>
 $endif$
 $body$
@@ -23,5 +37,6 @@ $body$
 <script src="assets/site.js"></script>
 <script src="assets/quiz.js"></script>
 <script src="assets/video.js"></script>
+<script src="assets/contextmenu.js"></script>
 </body>
 </html>

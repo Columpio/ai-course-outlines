@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" role="img" aria-label="Витраж: лестница рассуждений к солнцу">
+  <defs>
+    <clipPath id="arch"><path d="M70 380V170C70 80 140 30 240 22C340 30 410 80 410 170V380Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#arch)">
+    <rect x="60" y="0" width="360" height="400" fill="#EFE6F7"/>
+    <circle cx="200" cy="110" r="95" fill="#FEF3D9"/>
+    <path d="M70 380L240 22L410 380Z" fill="#DDF4F0" opacity=".7"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linejoin="round">
+    <rect x="95" y="320" width="78" height="60" fill="#E0455B"/>
+    <rect x="173" y="275" width="78" height="105" fill="#F7B32B"/>
+    <rect x="251" y="230" width="78" height="150" fill="#1FA79A"/>
+    <rect x="329" y="185" width="78" height="195" fill="#7B4AA3"/>
+  </g>
+  <path d="M134 300L212 255L290 210L368 165" fill="none" stroke="#241F31" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round"/>
+  <g stroke="#241F31" stroke-width="4" fill="#fff">
+    <circle cx="134" cy="300" r="10"/>
+    <circle cx="212" cy="255" r="10"/>
+    <circle cx="290" cy="210" r="10"/>
+    <circle cx="368" cy="165" r="10"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linecap="round">
+    <path d="M200 62V74M200 146V158M142 110H154M246 110H258M159 69L168 78M232 142L241 151M241 69L232 78M168 142L159 151"/>
+    <circle cx="200" cy="110" r="28" fill="#F7B32B"/>
+  </g>
+  <path d="M70 380V170C70 80 140 30 240 22C340 30 410 80 410 170V380Z" fill="none" stroke="#241F31" stroke-width="7" stroke-linejoin="round"/>
+  <rect x="50" y="380" width="380" height="14" rx="3" fill="#241F31"/>
+</svg>

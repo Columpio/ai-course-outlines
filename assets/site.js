@@ -18,40 +18,62 @@
       ? `<a class="step" href="${lesson.file}" title="${label}: Урок ${lesson.n}. ${lesson.title}" aria-label="${label}: Урок ${lesson.n}">${dir}</a>`
       : `<span class="step disabled" aria-hidden="true">${dir}</span>`;
   header.innerHTML = `<div class="header-inner">
-    <a class="brand" href="index.html">Курс по ИИ</a>
+    <a class="brand" href="index.html"><img src="assets/art/rose.svg" alt="">Курс по ИИ</a>
     <div class="dropdown">
       <button class="dropdown-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="lesson-menu">
         ${current ? `Урок ${current.n}` : "Все уроки"} <span aria-hidden="true">▾</span>
       </button>
       <ul class="dropdown-menu" id="lesson-menu">${menuItems}</ul>
     </div>
+    ${current ? `<div class="dropdown download">
+      <button class="dropdown-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="download-menu">⤓ Скачать <span aria-hidden="true">▾</span></button>
+      <ul class="dropdown-menu" id="download-menu">
+        <li><a href="${current.md}" download="${current.file.replace(".html", ".md")}"><span class="ttl">Markdown (.md)</span></a></li>
+        <li><a href="#" data-pdf><span class="ttl">PDF (через печать браузера)</span></a></li>
+      </ul>
+    </div>` : ""}
     ${current ? `<div class="steps">${step(prev, "←", "Предыдущий урок")}${step(next, "→", "Следующий урок")}</div>` : ""}
   </div>
   <div class="progress"><div id="progress-bar"></div></div>`;
 
-  const dropdown = header.querySelector(".dropdown");
-  const dropBtn = header.querySelector(".dropdown-btn");
-  const setMenu = (open) => {
-    dropdown.classList.toggle("open", open);
-    dropBtn.setAttribute("aria-expanded", String(open));
+  const dropdowns = [...header.querySelectorAll(".dropdown")];
+  const setMenu = (dd, open) => {
+    dd.classList.toggle("open", open);
+    dd.querySelector(".dropdown-btn").setAttribute("aria-expanded", String(open));
   };
-  dropBtn.addEventListener("click", () => setMenu(!dropdown.classList.contains("open")));
+  const closeMenus = () => dropdowns.forEach((dd) => setMenu(dd, false));
+  dropdowns.forEach((dd) =>
+    dd.querySelector(".dropdown-btn").addEventListener("click", () => {
+      const wasOpen = dd.classList.contains("open");
+      closeMenus();
+      setMenu(dd, !wasOpen);
+    })
+  );
   document.addEventListener("click", (e) => {
-    if (!dropdown.contains(e.target)) setMenu(false);
+    dropdowns.forEach((dd) => !dd.contains(e.target) && setMenu(dd, false));
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      setMenu(false);
+      closeMenus();
       closeDrawer();
     }
   });
+  const pdf = header.querySelector("[data-pdf]");
+  if (pdf) {
+    pdf.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeMenus();
+      window.print();
+    });
+  }
 
   // ---------- Список уроков на главной ----------
   const list = document.getElementById("lesson-list");
   if (list) {
     list.innerHTML = LESSONS.map(
-      (l) => `<li><a href="${l.file}"><span class="num">${l.n}</span>
-        <span><span class="kicker">Урок ${l.n}</span><span class="ttl">${l.title}</span></span></a></li>`
+      (l) => `<li class="tone-${l.tone}"><a href="${l.file}">
+        <img src="assets/art/lesson-${l.n}.svg" alt="">
+        <span class="card-text"><span class="kicker">Урок ${l.n}</span><span class="ttl">${l.title}</span><span class="desc">${l.desc}</span></span></a></li>`
     ).join("");
   }
 
@@ -95,24 +117,32 @@
   const byText = (tag, text) =>
     headings.find((h) => h.tagName === tag && h.textContent.includes(text));
 
+  const ICONS = {
+    video: '<path d="M8 5v14l11-7z" fill="currentColor"/>',
+    outline: '<path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    quiz: '<path d="M5 12.5l4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    open: '<path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>',
+  };
   const quick = [];
-  if (videoWrap) quick.push(["Видео", "video-wrap"]);
-  const h1 = headings.find((h) => h.tagName === "H1");
-  if (h1) quick.push(["Начало аутлайна", h1.id]);
+  if (videoWrap) quick.push(["Видео", "video-wrap", "video", "ruby"]);
+  const firstH2 = headings.find((h) => h.tagName === "H2");
+  if (firstH2) quick.push(["Начало аутлайна", firstH2.id, "outline", "sun"]);
   const quiz = byText("H3", "Группа 1");
   const open = byText("H3", "Группа 2");
-  if (quiz) quick.push(["Тест", quiz.id]);
-  if (open) quick.push(["Открытые вопросы", open.id]);
+  if (quiz) quick.push(["Тест", quiz.id, "quiz", "teal"]);
+  if (open) quick.push(["Открытые вопросы", open.id, "open", "plum"]);
 
   const sections = headings.filter((h) => h.tagName === "H2");
-  const li = ([label, id], cls = "") => `<li><a href="#${id}" class="${cls}">${label}</a></li>`;
+  const li = ([label, id]) => `<li><a href="#${id}">${label}</a></li>`;
+  const quickLi = ([label, id, icon, tone]) =>
+    `<li><a href="#${id}"><span class="ico tone-${tone}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[icon]}</svg></span>${label}</a></li>`;
 
   const aside = document.createElement("aside");
   aside.id = "side-nav";
   aside.setAttribute("aria-label", "Быстрый переход по странице");
   aside.innerHTML = `<div class="side-card">
     <p class="side-title">Быстрый переход</p>
-    <ul class="quick">${quick.map((q) => li(q)).join("")}</ul>
+    <ul class="quick">${quick.map(quickLi).join("")}</ul>
     <p class="side-title">Разделы урока</p>
     <ol class="toc">${sections.map((s) => li([s.textContent, s.id])).join("")}</ol>
     <div class="side-actions">
