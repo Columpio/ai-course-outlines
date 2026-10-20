@@ -7,20 +7,20 @@
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-<nav class="site-nav"><div>
-<a href="index.html">Курс по ИИ</a>
-<a href="lesson-1.html">Урок 1</a>
-<a href="lesson-2.html">Урок 2</a>
-</div></nav>
+<header class="site-header" id="site-header"></header>
+<div class="layout">
 <main>
 $if(videoid)$
 <div class="video-wrap" id="video-wrap">
-<label class="video-pin"><input type="checkbox" id="video-pin"> Закрепить видео</label>
+<label class="video-pin"><input type="checkbox" id="video-pin"> Закрепить видео вверху экрана</label>
 <div class="video-frame"><iframe src="https://rutube.ru/play/embed/$videoid$" title="Видео урока" allow="clipboard-write; autoplay" allowfullscreen frameborder="0"></iframe></div>
 </div>
 $endif$
 $body$
 </main>
+</div>
+<script src="assets/lessons.js"></script>
+<script src="assets/site.js"></script>
 <script src="assets/quiz.js"></script>
 <script src="assets/video.js"></script>
 </body>

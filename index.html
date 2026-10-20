@@ -7,14 +7,17 @@
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-<nav class="site-nav"><div><a href="index.html">Курс по ИИ</a></div></nav>
+<header class="site-header" id="site-header"></header>
+<div class="layout">
 <main>
+<div class="hero">
 <h1>Курс по ИИ для нетехнических людей</h1>
-<p>Аутлайны уроков по практическому использованию ИИ в церковном служении.</p>
-<ul class="lessons">
-<li><a href="lesson-1.html">Урок 1. Как устроен ИИ, машинное обучение и LLM</a></li>
-<li><a href="lesson-2.html">Урок 2. Рассуждающие модели, бенчмарки и мультимодальность</a></li>
-</ul>
+<p>Практическое использование ИИ в церковном служении: проповедь, воскресная школа, малые группы, диаконская работа. В каждом уроке видео, аутлайн и тест для самопроверки.</p>
+</div>
+<ul class="lessons" id="lesson-list"></ul>
 </main>
+</div>
+<script src="assets/lessons.js"></script>
+<script src="assets/site.js"></script>
 </body>
 </html>
