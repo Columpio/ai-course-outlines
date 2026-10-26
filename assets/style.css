@@ -161,6 +161,13 @@ summary { cursor: pointer; font-weight: 600; min-height: 32px; }
 .video-wrap.pinned .video-frame { width: min(100%, calc(38vh * 16 / 9)); }
 .video-wrap.pinned iframe { box-shadow: none; }
 
+/* ---------- Презентация ---------- */
+.slides-wrap { margin: 0 0 2rem; }
+.slides-frame { position: relative; aspect-ratio: 16 / 9; width: 100%; }
+.slides-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 2px solid var(--ink);
+  border-radius: 16px; box-shadow: 8px 8px 0 var(--teal); background: #1b1724; }
+.slides-link { margin: .9rem 0 0; text-align: center; font-size: .9rem; color: var(--muted); }
+
 /* ---------- Переход между уроками ---------- */
 .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 3rem; }
 .pager a { display: block; padding: 1rem 1.2rem; background: var(--paper); border: 2px solid var(--ink);
@@ -227,7 +234,7 @@ summary { cursor: pointer; font-weight: 600; min-height: 32px; }
 @media print {
   :root { --paper: #fff; --ink: #000; --muted: #444; --line: #ccc; }
   body { font-size: 11pt; line-height: 1.45; }
-  .site-header, #side-nav, .fab, .ctx-menu, .video-wrap, .pager, .quiz-score, .hero-art, .eyebrow { display: none !important; }
+  .site-header, #side-nav, .fab, .ctx-menu, .video-wrap, .slides-wrap, .pager, .quiz-score, .hero-art, .eyebrow { display: none !important; }
   .lesson-hero { background: none; }
   .lesson-hero::after, hr, h2::before { display: none; }
   .hero-inner { padding: 0 0 .5rem; display: block; }
