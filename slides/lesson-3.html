@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Урок 3. Текстовый промптинг и ментальная модель</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #241f31; --muted: #6a6478; --line: #e9e3f0; --paper: #fff; --tint: #faf7fd;
+  --ruby: #e0455b; --sun: #f7b32b; --teal: #1fa79a; --plum: #7b4aa3;
+  --ruby-soft: #fde8eb; --sun-soft: #fef3d9; --teal-soft: #ddf4f0; --plum-soft: #efe6f7;
+  --ok: #16794c; --ok-bg: #e1f5ea; --bad: #b42335; --bad-bg: #fde7ea;
+  --display: "Unbounded", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --arch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 18'%3E%3Cpath d='M0 18V9Q0 2 6 0Q12 2 12 9V18Z' fill='%23E0455B'/%3E%3Cpath d='M12 18V9Q12 2 18 0Q24 2 24 9V18Z' fill='%23F7B32B'/%3E%3Cpath d='M24 18V9Q24 2 30 0Q36 2 36 9V18Z' fill='%231FA79A'/%3E%3Cpath d='M36 18V9Q36 2 42 0Q48 2 48 9V18Z' fill='%237B4AA3'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1724; }
+body { font-family: var(--body); color: var(--ink); }
+
+#stage { position: absolute; top: 50%; left: 50%; width: 1280px; height: 720px;
+  transform-origin: center center; background: var(--paper); overflow: hidden; }
+
+.slide { position: absolute; inset: 0; display: none; flex-direction: column;
+  padding: 56px 80px 64px; font-size: 27px; line-height: 1.45; }
+.slide.active { display: flex; animation: fade .25s ease-out; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.slide::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 18px;
+  background: var(--arch) repeat-x left bottom / 48px 18px; }
+
+.slide h2 { margin: 0 0 32px; font: 700 40px/1.2 var(--display); letter-spacing: -.01em; }
+.slide h2 .tag { display: inline-block; margin-right: 14px; padding: 2px 14px; border: 2px solid var(--ink);
+  border-radius: 999px; font: 600 18px/1.6 var(--body); vertical-align: middle; letter-spacing: .03em; }
+.body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+
+ul.points { margin: 0; padding: 0; list-style: none; display: grid; gap: 20px; }
+ul.points li { position: relative; padding-left: 40px; }
+ul.points li::before { content: ""; position: absolute; left: 4px; top: .42em; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--accent, var(--plum)); }
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 16px; }
+ol.steps li { counter-increment: s; position: relative; padding-left: 60px; }
+ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 42px; height: 42px;
+  border: 2px solid var(--ink); border-radius: 50%; background: var(--sun-soft);
+  font: 700 20px/38px var(--display); text-align: center; }
+b, strong { font-weight: 700; }
+.muted { color: var(--muted); }
+.big { font: 700 46px/1.25 var(--display); }
+.center { text-align: center; }
+
+.prompt { position: relative; padding: 22px 28px 22px; background: var(--tint); border: 2px solid var(--ink);
+  border-radius: 18px; box-shadow: 6px 6px 0 var(--accent, var(--plum)); font-size: 23px; line-height: 1.5; }
+.prompt::before { content: attr(data-label); position: absolute; top: -15px; left: 22px; padding: 1px 12px;
+  background: var(--ink); color: #fff; border-radius: 999px; font: 600 14px/1.8 var(--body); letter-spacing: .05em; text-transform: uppercase; }
+.prompt.small { font-size: 20px; }
+.prompt .sec { display: block; margin-top: 10px; font: 700 15px/1.6 var(--display); color: var(--accent, var(--plum)); letter-spacing: .04em; }
+.prompt .sec:first-child { margin-top: 0; }
+pre.mono { margin: 0; font: 18px/1.45 ui-monospace, "Cascadia Mono", Consolas, monospace; white-space: pre-wrap; }
+
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.vs > div { padding: 22px 26px; border-radius: 18px; font-size: 24px; }
+.vs .bad { background: var(--bad-bg); }
+.vs .good { background: var(--ok-bg); }
+.vs .bad::before, .vs .good::before { display: block; margin-bottom: 8px; font: 700 16px/1.4 var(--display); letter-spacing: .05em; }
+.vs .bad::before { content: "✗  ТАК"; color: var(--bad); }
+.vs .good::before { content: "✓  ЛУЧШЕ"; color: var(--ok); }
+.vs[data-labels] .bad::before { content: attr(data-l); }
+.vs[data-labels] .good::before { content: attr(data-l); }
+
+.cards { display: grid; grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 20px; }
+.card { padding: 20px 22px; border: 2px solid var(--ink); border-radius: 18px; background: var(--paper); font-size: 22px; line-height: 1.4; }
+.card h3 { margin: 0 0 8px; font: 700 19px/1.3 var(--display); color: var(--accent, var(--plum)); }
+.card:nth-child(4n+1) { box-shadow: 5px 5px 0 var(--ruby); }
+.card:nth-child(4n+2) { box-shadow: 5px 5px 0 var(--sun); }
+.card:nth-child(4n+3) { box-shadow: 5px 5px 0 var(--teal); }
+.card:nth-child(4n+4) { box-shadow: 5px 5px 0 var(--plum); }
+
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 10px; }
+.chain span { padding: 12px 20px; border: 2px solid var(--ink); border-radius: 999px; background: var(--accent-soft, var(--plum-soft)); font-weight: 600; font-size: 24px; }
+.chain i { font-style: normal; color: var(--muted); font-size: 26px; }
+
+.note { padding: 16px 22px; border-left: 6px solid var(--accent, var(--plum)); background: var(--accent-soft, var(--plum-soft));
+  border-radius: 0 14px 14px 0; font-size: 23px; }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
+
+/* Разделы */
+.slide.divider { justify-content: center; padding: 80px 110px; background: var(--accent-soft, var(--plum-soft)); }
+.divider .num { font: 700 150px/1 var(--display); color: var(--accent); text-shadow: 6px 6px 0 var(--ink); }
+.divider h1 { margin: 18px 0 0; font: 700 56px/1.15 var(--display); letter-spacing: -.015em; }
+.divider p { margin: 22px 0 0; max-width: 900px; font-size: 30px; color: #4a4458; }
+
+.slide.title { justify-content: center; padding: 80px 110px;
+  background: linear-gradient(120deg, var(--sun-soft) 0%, #ffeff2 50%, var(--teal-soft) 100%); }
+.title .eyebrow { align-self: flex-start; padding: 4px 18px; background: var(--paper); border: 2px solid var(--ink);
+  border-radius: 999px; box-shadow: 4px 4px 0 var(--ruby); font: 600 18px/1.6 var(--body); letter-spacing: .05em; text-transform: uppercase; }
+.title h1 { margin: 28px 0 0; font: 700 64px/1.12 var(--display); letter-spacing: -.02em; }
+.title p { margin: 24px 0 0; font-size: 30px; color: #4a4458; max-width: 900px; }
+
+.ruby { --accent: var(--ruby); --accent-soft: var(--ruby-soft); }
+.sun  { --accent: #d18b00; --accent-soft: var(--sun-soft); }
+.teal { --accent: var(--teal); --accent-soft: var(--teal-soft); }
+.plum { --accent: var(--plum); --accent-soft: var(--plum-soft); }
+
+/* Картинки */
+.art { margin: 0; }
+.art img { display: block; width: 100%; height: 100%; object-fit: cover; border: 2px solid var(--ink);
+  border-radius: 26px; box-shadow: 8px 8px 0 var(--accent, var(--plum)); background: var(--paper); }
+.art figcaption { margin-top: 14px; font-size: 14px; line-height: 1.35; color: var(--muted); }
+.divider .art { position: absolute; right: 100px; top: 50%; width: 360px; height: 470px;
+  transform: translateY(-50%) rotate(2deg); }
+.divider.has-art h1, .divider.has-art p { max-width: 640px; }
+.split { display: grid; grid-template-columns: 1fr 300px; gap: 48px; align-items: center; }
+.split .art { height: 400px; }
+.split .art.contain img { object-fit: contain; padding: 18px; }
+
+/* Lost in the middle */
+.lim { display: flex; gap: 8px; height: 90px; }
+.lim div { flex: 1; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 20px; }
+.lim .hot { background: var(--teal); color: #fff; }
+.lim .cold { background: var(--line); color: var(--muted); flex: 2.4; }
+
+/* Навигация */
+#hud { position: fixed; right: 18px; bottom: 14px; display: flex; gap: 10px; align-items: center;
+  font: 600 14px var(--body); color: #cfc8dc; user-select: none; }
+#hud button { width: 34px; height: 34px; border: 1px solid #4a4458; border-radius: 50%; background: #2b2538; color: #fff; cursor: pointer; font-size: 16px; }
+#hud button:hover { background: var(--plum); }
+#bar { position: fixed; left: 0; top: 0; height: 4px; background: linear-gradient(90deg, var(--ruby), var(--sun), var(--teal), var(--plum)); transition: width .2s; }
+@media print { #hud, #bar { display: none; } }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+<!-- ========== Титул ========== -->
+<section class="slide title">
+  <div class="eyebrow">ИИ для служения · Урок 3</div>
+  <h1>Текстовый промптинг<br>и ментальная модель</h1>
+  <p>Как говорить с ИИ, чтобы получать пригодный черновик, а не «среднее по интернету»</p>
+</section>
+
+<section class="slide plum">
+  <h2>План урока</h2>
+  <div class="body">
+    <div class="cards" style="--cols:2">
+      <div class="card"><h3>Как думать об ИИ</h3>Ментальная модель: что по ту сторону экрана</div>
+      <div class="card"><h3>Как просить</h3>Шесть блоков промпта, few-shot, альтернативы, инвертирование чата</div>
+      <div class="card"><h3>Как проверять</h3>Критика в новом чате, защита от галлюцинаций</div>
+      <div class="card"><h3>Гигиена контекста</h3>Одна задача = один чат, handoff</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 1. Ментальная модель ========== -->
+<section class="slide divider ruby">
+  <div class="num">1</div>
+  <h1>Что по ту сторону экрана</h1>
+  <p>Ментальная модель — краткий итог Уроков 1–2</p>
+</section>
+
+<section class="slide ruby">
+  <h2>Не справочник и не разум</h2>
+  <div class="body split">
+    <div>
+      <p class="big">Сверхмощный Т9,<br>прочитавший весь интернет</p>
+      <ul class="points">
+        <li>Предсказывает следующий токен</li>
+        <li>Генерирует <b>правдоподобное</b> — не обязательно истинное</li>
+      </ul>
+    </div>
+    <figure class="art contain"><img src="lesson-3-img/nokia.png" alt="Кнопочный телефон Nokia 3310 с набором Т9"><figcaption>Nokia 3310 · фото smial, FAL</figcaption></figure>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>ИИ не читает мысли</h2>
+  <div class="body">
+    <p>Видит <b>только своё контекстное окно</b>:</p>
+    <div class="chain"><span>ваш промпт</span><i>+</i><span>системный промпт разработчиков</span><i>+</i><span>найденное в поиске</span></div>
+    <p>Не знает ни возраста детей в ВШ, ни традиции вашей церкви, ни грамотности группы, ни тайминга.</p>
+    <div class="note">Одна фраза — гарантированное «фуфло». Чем конкретнее ситуация, тем лучше ответ</div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Пример: змей в Быт 3</h2>
+  <div class="body">
+    <div class="vs" data-labels>
+      <div class="bad" data-l="✗  БЕЗ КОНТЕКСТА">«Кто такой змей в Бытии 3?»<br><br><span class="muted">→ может всплыть иудейское прочтение: просто очень умная говорящая змея</span></div>
+      <div class="good" data-l="✓  С КОНТЕКСТОМ">«Мы читаем Библию христоцентрично, через историю искупления…»<br><br><span class="muted">→ сатана, использовавший образ змея</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>«Рваная граница» возможностей</h2>
+  <div class="body">
+    <div class="vs" data-labels>
+      <div class="good" data-l="✓  БЛЕСТЯЩЕ">Разбирает хиазм в Псалмах и структуру Послания к Римлянам на уровне топовых богословов</div>
+      <div class="bad" data-l="✗  ТУТ ЖЕ">Путает сыновей Иакова, приписывает Сперджена Кальвину, выдумывает стих в Притчах</div>
+    </div>
+    <p class="muted center">Jagged Frontier — Итан Моллик · вывод: перепроверять всё</p>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Почему уверенно врёт</h2>
+  <div class="body">
+    <p class="big">«Убедительно для большинства» и «истинно» — для модели одно и то же</p>
+    <div class="cards" style="--cols:2">
+      <div class="card"><h3>Философ</h3>любит мудрость и ищет истину</div>
+      <div class="card"><h3>Софист</h3>торгует мудростью: главное — убедить</div>
+    </div>
+    <div class="note">Уверенный духовный тон — никогда не доказательство</div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Усреднение</h2>
+  <div class="body">
+    <p class="big">Без оптики — «средняя температура по больнице»</p>
+    <ul class="points">
+      <li>Среднее христианство в интернете — морализаторство</li>
+      <li>«Дай проповедь про X» → проповедь ни о чём</li>
+      <li>Лекарство — явно задать традицию и фокус</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Поддакивание (sycophancy)</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Модели учат <b>нравиться людям</b> — это прямо метрика обучения</li>
+      <li>Психотерапевт, поддакивающий бреду: «да, за тобой правда следят»</li>
+    </ul>
+    <div class="vs">
+      <div class="bad">«Ведь этот стих говорит именно об X?»</div>
+      <div class="good">«Какова история толкования стиха? Сильные и слабые стороны каждого»</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <div class="body split">
+    <div>
+      <p class="big">Ответ ИИ — черновик стажёра,<br>а не кафедра</p>
+      <p class="muted">Нагенерили бред и транслируете людям — виноват не молоток. «Немногие делайтесь учителями» (Иак 3:1)</p>
+    </div>
+    <figure class="art"><img src="lesson-3-img/jerome.jpg" alt="Гравюра Дюрера: Иероним в келье за работой над текстом"><figcaption>А. Дюрер. Святой Иероним в келье, 1514</figcaption></figure>
+  </div>
+</section>
+
+<!-- ========== 2. Конструктор ========== -->
+<section class="slide divider sun has-art">
+  <div class="num">2</div>
+  <h1>Анатомия сильного запроса</h1>
+  <p>Шесть блоков промпта<br>Сквозной пример — Лк 15</p>
+  <figure class="art"><img src="lesson-3-img/prodigal.jpg" alt="Рембрандт. Возвращение блудного сына"><figcaption>Рембрандт. Возвращение блудного сына, ок. 1668</figcaption></figure>
+</section>
+
+<section class="slide sun">
+  <h2>Шесть блоков</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>Задача</h3>что получить на выходе</div>
+      <div class="card"><h3>Контекст</h3>всё, чего ИИ о вас не знает</div>
+      <div class="card"><h3>Материалы</h3>текст отрывка, прошлые уроки</div>
+      <div class="card"><h3>Роль</h3>с какой позиции отвечать</div>
+      <div class="card"><h3>Формат</h3>артефакты, структура, запреты</div>
+      <div class="card"><h3>Критерии</h3>как проверить себя перед ответом</div>
+    </div>
+    <p class="muted center">Для серьёзной задачи. Просто погуглить — можно и одной фразой</p>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2><span class="tag">1</span>Задача — глагол действия</h2>
+  <div class="body">
+    <ul class="points">
+      <li><b>Объясни</b> оправдание по вере на 3 уровнях: дети, подростки, домашняя группа</li>
+      <li><b>Перепиши</b> историю в живую иллюстрацию для проповеди</li>
+      <li><b>Составь</b> вопросы для малой группы — чтобы каждый задумался о применении</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2><span class="tag">2</span>Контекст: урок ВШ по Лк 15</h2>
+  <div class="body">
+    <div class="cards" style="--cols:2">
+      <div class="card"><h3>Время</h3>30 минут, из них 10 — игра</div>
+      <div class="card"><h3>Дети</h3>8–9 лет · четверо или пятнадцать · особенности развития</div>
+      <div class="card"><h3>Люди</h3>веду один или есть помощник</div>
+      <div class="card"><h3>Помещение</h3>мимо ходят люди, громкую музыку нельзя</div>
+    </div>
+    <div class="note">Всё, что может быть важно, — затолкать в промпт</div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2><span class="tag">3</span>Материалы</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Сам отрывок — в нужном переводе (Синодальный, современный)</li>
+      <li>Прошлые удачные уроки — «делай в этом стиле»</li>
+      <li>Что прошлый раз пошло плохо</li>
+      <li>Главная идея: не морализаторство, а показать Христа</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2><span class="tag">4</span>Роль</h2>
+  <div class="body">
+    <div class="prompt small" data-label="Автор">Мы армянская баптистская община, не диспенсационалисты: заветное богословие, историко-искупительный метод. Пиши как профессиональный детский служитель, знающий возрастные особенности.</div>
+    <div class="prompt small" data-label="Критик">Ты атеист с советским мышлением / мусульманин, слышавший, что Библию переписали. Раскритикуй мой урок и покажи самые слабые места.</div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2><span class="tag">5–6</span>Формат и критерии</h2>
+  <div class="body">
+    <p><b>Формат — три артефакта:</b></p>
+    <div class="chain"><span>подробный конспект учителю</span><span>краткий — на ходу</span><span>презентация детям</span></div>
+    <ul class="points">
+      <li><b>Ограничения:</b> картинки, светлый яркий фон, без жаргона</li>
+      <li><b>Критерии:</b> стихи и факты перепроверены, без морализаторства</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Пример промпта · часть 1</h2>
+  <div class="body">
+    <div class="prompt small" data-label="Промпт">
+      <span class="sec">ЗАДАЧА</span>
+      Составь конспект воскресной проповеди по притче о блудном сыне (Лк 15:11–32): главная идея, 3 пункта с подпунктами и стихами, вступление и применение.
+      <span class="sec">КОНТЕКСТ И АУДИТОРИЯ</span>
+      Воскресная проповедь, 35 минут. Зрелые члены церкви, подростки и 5–7 гостей, впервые пришедших в церковь. Многие давно в церкви и узнают себя в старшем брате, но сами этого не замечают.
+      <span class="sec">ИСХОДНЫЕ МАТЕРИАЛЫ</span>
+      Вот примеры прошлых проповедей в моём стиле: [1] [2] [3]
+    </div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Пример промпта · часть 2</h2>
+  <div class="body">
+    <div class="prompt small" data-label="Промпт">
+      <span class="sec">РОЛЬ</span>
+      Ты опытный баптистский проповедник: проповедуешь от текста и в каждом пункте ведёшь к Евангелию и благодати Христа.
+      <span class="sec">ФОРМАТ И ОГРАНИЧЕНИЯ</span>
+      Главная идея одним предложением · 3 пункта со стихами · тайминг, итого 35 мин · применение отдельно для верующих и для гостей · без морализаторства и жаргона · не выдумывай цитаты
+      <span class="sec">КРИТЕРИИ КАЧЕСТВА</span>
+      Перед выдачей проверь: учтены ли ст. 1–3? не потерян ли старший брат? поймёт ли гость? ведёт ли каждый пункт к благодати?
+    </div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Шесть блоков — чек-лист в голове</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Подписывать блоки в промпте не обязательно — важно ничего не забыть</li>
+      <li>Без них: «сгенери» → косяк → «поправь» → новый косяк…</li>
+      <li>Ошибка системная, через весь текст — локальной правкой не чинится</li>
+    </ul>
+    <div class="note">Дольше по времени и хуже по результату, чем сразу дать контекст</div>
+  </div>
+</section>
+
+<!-- ========== 3. Few-shot и альтернативы ========== -->
+<section class="slide divider teal">
+  <div class="num">3</div>
+  <h1>Few-shot и альтернативы</h1>
+  <p>Приём Урока 2 — против нейрослопа</p>
+</section>
+
+<section class="slide teal">
+  <h2>Zero-shot vs few-shot</h2>
+  <div class="body">
+    <div class="vs" data-labels>
+      <div class="bad" data-l="ZERO-SHOT · НАОБУМ">«Напиши проповедь по Лк 15»</div>
+      <div class="good" data-l="FEW-SHOT · ПРИСТРЕЛКА">Еф 1 → моя проповедь<br>Рим 3 → моя проповедь<br>Теперь Лк 15</div>
+    </div>
+    <p class="center">Каждый пример — пристрелочный выстрел: следующий точнее</p>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Свой стиль вместо нейрослопа</h2>
+  <div class="body">
+    <p class="big">Нейрослоп — не вина ИИ,<br>а недостаток навыка</p>
+    <ul class="points">
+      <li>Всё, что увидят люди, — с референсами своих прошлых текстов</li>
+      <li>Модель удивительно хорошо копирует стиль</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Дивергентный заход</h2>
+  <div class="body">
+    <div class="vs">
+      <div class="bad">«Придумай вступление к проповеди»</div>
+      <div class="good">«Дай 5 принципиально разных заходов: случай из семьи, исторический факт, парадокс современности, контраст с I веком, вопрос в зал»</div>
+    </div>
+    <p class="center">Выбрать лучший по своей интуиции → докрутить</p>
+  </div>
+</section>
+
+<!-- ========== 4. Инвертирование ========== -->
+<section class="slide divider plum has-art">
+  <div class="num">4</div>
+  <h1>Инвертирование чата</h1>
+  <p>Пусть ИИ сам вытянет из вас контекст<br>Пример — урок ВШ по Быт 22</p>
+  <figure class="art"><img src="lesson-3-img/isaac.jpg" alt="Рембрандт. Жертвоприношение Исаака"><figcaption>Рембрандт. Жертвоприношение Авраама, 1635</figcaption></figure>
+</section>
+
+<section class="slide plum">
+  <h2>Шаг 1 · вывалить всё голосом</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Поток сознания: аудитория, традиция, время, идеи, гости, подростки</li>
+      <li>Микрофон в чате или голосовой ввод клавиатуры (Яндекс Клавиатура: долго держать пробел)</li>
+      <li>Приложить свои прошлые тексты файлами</li>
+    </ul>
+    <div class="note">Структурировать не нужно — но держать в голове шесть блоков</div>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Рабочая формула</h2>
+  <div class="body">
+    <ol class="steps">
+      <li>Весь контекст + «<b>НЕ пиши сразу</b>»</li>
+      <li>«Задай нумерованным списком вопросы, чтобы получить наилучший результат»</li>
+      <li>Ответить голосом по номерам</li>
+      <li>Важная задача: «Перескажи, как понял» → поправить</li>
+      <li>«Собирай»</li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Ответ по номерам</h2>
+  <div class="body">
+    <div class="prompt" data-label="Голосом">1 — да, так и делай<br>2 — об этом не подумал: лучше вот так<br>3 — 35 минут<br>4 — я сказал неправильно, на самом деле…</div>
+    <p class="center">Вопросов бывает 5, бывает 50 — и большинство о том, <b>о чём вы не подумали</b></p>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Это теория коммуникации</h2>
+  <div class="body">
+    <p>Работает с любым разумным исполнителем — и с людьми:</p>
+    <div class="chain"><span>Прорабу: задача, нюансы, запреты</span><i>→</i><span>«Какие вопросы?»</span><i>→</i><span>«Перескажи, как понял»</span></div>
+    <p class="muted">Не «присобачь плинтус» и не инструкция по саморезам — золотая середина. Эксперт сразу подсветит проблемы, пока ничего не сделано</p>
+  </div>
+</section>
+
+<!-- ========== 5. Критика ========== -->
+<section class="slide divider ruby">
+  <div class="num">5</div>
+  <h1>Черновик → Критика → Исправление</h1>
+  <p>Проверка результата на прочность</p>
+</section>
+
+<section class="slide ruby">
+  <h2>Критика — только в новом чате</h2>
+  <div class="body">
+    <p class="big">В том же чате модель хвалит свою работу</p>
+    <p class="muted">«Начальник, плинтус идеальный, делал как для себя»</p>
+    <div class="note">Новый пустой чат → вставить результат → «Раскритикуй»</div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Прочитай глазами…</h2>
+  <div class="body">
+    <div class="cards" style="--cols:2">
+      <div class="card">уставшего родителя</div>
+      <div class="card">подростка, которому в церкви всё — скучная мораль</div>
+      <div class="card">гостя, не знающего церковных слов</div>
+      <div class="card">богослова, преподавателя гомилетики</div>
+    </div>
+    <p class="muted center">Жаргон · отрыв от текста · законничество · вода · неверные цитаты · эйзегеза</p>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Алгоритм</h2>
+  <div class="body">
+    <ol class="steps">
+      <li>«Сгруппируй замечания по критичности, нумерация сквозная»</li>
+      <li>Отобрать голосом: «1 и 3 — верно, 2 — не проблема» (критик тоже ошибается)</li>
+      <li>Верные замечания — в исходный чат: «исправь»</li>
+      <li>Снова новый чат-критик, пока критичные не исчезнут</li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <div class="body">
+    <p class="big center">Критика ИИ не заменяет<br>вашей экспертизы, интуиции<br>и молитвенной работы над текстом</p>
+  </div>
+</section>
+
+<!-- ========== 6. Галлюцинации ========== -->
+<section class="slide divider sun">
+  <div class="num">6</div>
+  <h1>Защита от галлюцинаций</h1>
+  <p>Писание, цитаты, числа</p>
+</section>
+
+<section class="slide sun">
+  <h2>Откуда берутся</h2>
+  <div class="body">
+    <ul class="points">
+      <li>В весах перемешаны Синодальный, НРП, славянизмы, пересказы</li>
+      <li>Склеивает два стиха, ошибается номером</li>
+      <li>Не умеет «в столбик» — числа путает (ChatGPT, Gemini зовут код)</li>
+      <li>Под нажимом признается: «Кальвин бы так сказал»</li>
+    </ul>
+    <div class="note">Фундаментально не лечится — только снижается</div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Разрешение не знать</h2>
+  <div class="body">
+    <div class="prompt" data-label="В конце промпта">Приводи цитаты отцов церкви. Если не уверен в ссылке или авторстве — напиши рядом «(не уверен)». Не выдумывай.</div>
+    <p class="center">Дверца: и угодить вам, и не погрешить против фактов</p>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Точная ссылка и дословно</h2>
+  <div class="body">
+    <div class="prompt" data-label="Промпт">Цитируя Августина «О граде Божием», укажи книгу, главу и приведи текст дословно.</div>
+    <p class="center">Модели труднее выдумать — ей приходится искать.<br>Вам и критику легче проверить</p>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Калибровка уверенности</h2>
+  <div class="body">
+    <div class="prompt" data-label="Тем же чатом, после конспекта">Пометь каждое утверждение: [точно] / [вероятно] / [не уверен]. Для фактов приведи ссылку.</div>
+    <div class="note"><b>Железное правило:</b> каждый стих и каждую цитату открыть и проверить глазами</div>
+  </div>
+</section>
+
+<!-- ========== 7. Контекст ========== -->
+<section class="slide divider teal">
+  <div class="num">7</div>
+  <h1>Гигиена контекста</h1>
+  <p>Почему длинный чат «тупеет»</p>
+</section>
+
+<section class="slide teal">
+  <h2>Конвейер с ограниченным входом</h2>
+  <div class="body">
+    <ul class="points">
+      <li>У топовых моделей ~1 млн токенов, больше — сервис не примет</li>
+      <li>Каждое сообщение — модель перечитывает <b>всю</b> переписку заново</li>
+      <li>В длинном чате середина может незаметно выпасть</li>
+    </ul>
+    <div class="lim"><div class="hot">начало</div><div class="cold">середина теряется</div><div class="hot">конец</div></div>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Куда пропали жирафики?</h2>
+  <div class="body">
+    <div class="chain"><span>«Сказка про ёжика»</span><i>→</i><span>«…и про жирафов»</span><i>→</i><span>много правок</span><i>→</i><span>жирафы исчезли</span></div>
+    <ul class="points">
+      <li>В интерфейсе всё на месте, а под капотом середина удалена</li>
+      <li>Инструкции ближе к началу соблюдаются лучше</li>
+    </ul>
+    <p class="big center">2 чата × 250 тыс. &gt; 1 чат × 500 тыс.</p>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Не переполнять контекст</h2>
+  <div class="body">
+    <div class="vs">
+      <div class="bad">100 конспектов вперемешку с рецептами — примеры про готовку в уроке ВШ</div>
+      <div class="good">1–2 своих конспекта именно уроков ВШ</div>
+    </div>
+    <div class="note">Противоречие: контекст должен быть и полным, и минимальным — балансируйте</div>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Загрязнение чата</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Модель «якорится» за свои старые ответы</li>
+      <li>Пошло не туда → <b>карандаш</b> на проблемном сообщении</li>
+      <li>Долго спорите → промпт с самого начала был плохой</li>
+    </ul>
+    <div class="prompt small" data-label="Перед уходом">Выпиши все неоднозначные вещи, о которых мы договорились в споре, — дам их в новом чате.</div>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Одна задача = один чат</h2>
+  <div class="body">
+    <p>Большую задачу — по этапам, каждый в новом чате:</p>
+    <div class="chain"><span>план сайта</span><i>→</i><span>структура</span><i>→</i><span>разделы</span></div>
+    <div class="prompt small" data-label="Handoff · передача в новый чат">Сожми всё в бриф для другой нейросети: задача, аудитория, принятые решения, отвергнутые варианты, текущий черновик.</div>
+  </div>
+</section>
+
+<!-- ========== Вопросы ========== -->
+<section class="slide plum">
+  <h2>Из вопросов: память и старые чаты</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Память Qwen: Настройки → Персонализация → сохранённые воспоминания</li>
+      <li>Модель сама запоминает факты — вспомогательно, не серебряная пуля</li>
+      <li>Старые чаты удалять не нужно: модель их не видит</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Из вопросов: чат или агент?</h2>
+  <div class="body">
+    <div class="vs" data-labels>
+      <div class="good" data-l="ЧАТ">Отвечает и ищет в интернете. Ничего не меняет вовне</div>
+      <div class="good" data-l="АГЕНТ">Меняет внешний мир: файлы на диске, заметки, GitHub</div>
+    </div>
+    <p class="muted center">Техники промптинга работают и с агентами — про них отдельно дальше в курсе</p>
+  </div>
+</section>
+
+<section class="slide title">
+  <h1>ИИ пишет черновик.<br>Проверяет человек.</h1>
+  <p>Вопросы?</p>
+</section>
+
+</div>
+
+<div id="hud">
+  <button id="prev" aria-label="Назад">‹</button>
+  <span id="counter"></span>
+  <button id="next" aria-label="Вперёд">›</button>
+  <button id="full" aria-label="Во весь экран">⛶</button>
+</div>
+
+<script>
+const stage = document.getElementById('stage');
+const slides = [...stage.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+const bar = document.getElementById('bar');
+let current = 0;
+
+function show(n) {
+  current = Math.max(0, Math.min(slides.length - 1, n));
+  slides.forEach((s, k) => s.classList.toggle('active', k === current));
+  counter.textContent = `${current + 1} / ${slides.length}`;
+  bar.style.width = `${(current + 1) / slides.length * 100}%`;
+  history.replaceState(null, '', `#${current + 1}`);
+}
+
+function fit() {
+  const scale = Math.min(innerWidth / 1280, innerHeight / 720);
+  stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+}
+
+document.addEventListener('keydown', e => {
+  if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(current + 1); }
+  else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(current - 1); }
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') show(slides.length - 1);
+  else if (e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') toggleFull();
+});
+
+stage.addEventListener('click', e => {
+  if (getSelection().toString()) return;
+  const r = stage.getBoundingClientRect();
+  show(e.clientX > r.left + r.width / 2 ? current + 1 : current - 1);
+});
+
+function toggleFull() {
+  document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+}
+
+document.getElementById('prev').onclick = () => show(current - 1);
+document.getElementById('next').onclick = () => show(current + 1);
+document.getElementById('full').onclick = toggleFull;
+addEventListener('resize', fit);
+
+fit();
+show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+</script>
+</body>
+</html>
