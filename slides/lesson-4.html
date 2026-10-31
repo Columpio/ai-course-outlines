@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Урок 4. Продвинутые приёмы веб-чата и промптинг картинок, видео и музыки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #241f31; --muted: #6a6478; --line: #e9e3f0; --paper: #fff; --tint: #faf7fd;
+  --ruby: #e0455b; --sun: #f7b32b; --teal: #1fa79a; --plum: #7b4aa3;
+  --ruby-soft: #fde8eb; --sun-soft: #fef3d9; --teal-soft: #ddf4f0; --plum-soft: #efe6f7;
+  --ok: #16794c; --ok-bg: #e1f5ea; --bad: #b42335; --bad-bg: #fde7ea;
+  --display: "Unbounded", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --arch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 18'%3E%3Cpath d='M0 18V9Q0 2 6 0Q12 2 12 9V18Z' fill='%23E0455B'/%3E%3Cpath d='M12 18V9Q12 2 18 0Q24 2 24 9V18Z' fill='%23F7B32B'/%3E%3Cpath d='M24 18V9Q24 2 30 0Q36 2 36 9V18Z' fill='%231FA79A'/%3E%3Cpath d='M36 18V9Q36 2 42 0Q48 2 48 9V18Z' fill='%237B4AA3'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1724; }
+body { font-family: var(--body); color: var(--ink); }
+
+#stage { position: absolute; top: 50%; left: 50%; width: 1280px; height: 720px;
+  transform-origin: center center; background: var(--paper); overflow: hidden; }
+
+.slide { position: absolute; inset: 0; display: none; flex-direction: column;
+  padding: 56px 80px 64px; font-size: 27px; line-height: 1.45; }
+.slide.active { display: flex; animation: fade .25s ease-out; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.slide::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 18px;
+  background: var(--arch) repeat-x left bottom / 48px 18px; }
+
+.slide h2 { margin: 0 0 32px; font: 700 40px/1.2 var(--display); letter-spacing: -.01em; }
+.slide h2 .tag { display: inline-block; margin-right: 14px; padding: 2px 14px; border: 2px solid var(--ink);
+  border-radius: 999px; font: 600 18px/1.6 var(--body); vertical-align: middle; letter-spacing: .03em; }
+.body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+
+ul.points { margin: 0; padding: 0; list-style: none; display: grid; gap: 20px; }
+ul.points li { position: relative; padding-left: 40px; }
+ul.points li::before { content: ""; position: absolute; left: 4px; top: .42em; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--accent, var(--plum)); }
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 16px; }
+ol.steps li { counter-increment: s; position: relative; padding-left: 60px; }
+ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 42px; height: 42px;
+  border: 2px solid var(--ink); border-radius: 50%; background: var(--sun-soft);
+  font: 700 20px/38px var(--display); text-align: center; }
+b, strong { font-weight: 700; }
+.muted { color: var(--muted); }
+.big { font: 700 46px/1.25 var(--display); }
+.center { text-align: center; }
+
+.prompt { position: relative; padding: 22px 28px 22px; background: var(--tint); border: 2px solid var(--ink);
+  border-radius: 18px; box-shadow: 6px 6px 0 var(--accent, var(--plum)); font-size: 23px; line-height: 1.5; }
+.prompt::before { content: attr(data-label); position: absolute; top: -15px; left: 22px; padding: 1px 12px;
+  background: var(--ink); color: #fff; border-radius: 999px; font: 600 14px/1.8 var(--body); letter-spacing: .05em; text-transform: uppercase; }
+.prompt.small { font-size: 20px; }
+.prompt .sec { display: block; margin-top: 10px; font: 700 15px/1.6 var(--display); color: var(--accent, var(--plum)); letter-spacing: .04em; }
+.prompt .sec:first-child { margin-top: 0; }
+pre.mono { margin: 0; font: 18px/1.45 ui-monospace, "Cascadia Mono", Consolas, monospace; white-space: pre-wrap; }
+
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.vs > div { padding: 22px 26px; border-radius: 18px; font-size: 24px; }
+.vs .bad { background: var(--bad-bg); }
+.vs .good { background: var(--ok-bg); }
+.vs .bad::before, .vs .good::before { display: block; margin-bottom: 8px; font: 700 16px/1.4 var(--display); letter-spacing: .05em; }
+.vs .bad::before { content: "✗  ТАК"; color: var(--bad); }
+.vs .good::before { content: "✓  ЛУЧШЕ"; color: var(--ok); }
+
+.cards { display: grid; grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 20px; }
+.card { padding: 20px 22px; border: 2px solid var(--ink); border-radius: 18px; background: var(--paper); font-size: 22px; line-height: 1.4; }
+.card h3 { margin: 0 0 8px; font: 700 19px/1.3 var(--display); color: var(--accent, var(--plum)); }
+.card:nth-child(4n+1) { box-shadow: 5px 5px 0 var(--ruby); }
+.card:nth-child(4n+2) { box-shadow: 5px 5px 0 var(--sun); }
+.card:nth-child(4n+3) { box-shadow: 5px 5px 0 var(--teal); }
+.card:nth-child(4n+4) { box-shadow: 5px 5px 0 var(--plum); }
+
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 10px; }
+.chain span { padding: 12px 20px; border: 2px solid var(--ink); border-radius: 999px; background: var(--accent-soft, var(--plum-soft)); font-weight: 600; font-size: 24px; }
+.chain i { font-style: normal; color: var(--muted); font-size: 26px; }
+
+.note { padding: 16px 22px; border-left: 6px solid var(--accent, var(--plum)); background: var(--accent-soft, var(--plum-soft));
+  border-radius: 0 14px 14px 0; font-size: 23px; }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
+
+/* Разделы */
+.slide.divider { justify-content: center; padding: 80px 110px; background: var(--accent-soft, var(--plum-soft)); }
+.divider .num { font: 700 150px/1 var(--display); color: var(--accent); text-shadow: 6px 6px 0 var(--ink); }
+.divider h1 { margin: 18px 0 0; font: 700 56px/1.15 var(--display); letter-spacing: -.015em; }
+.divider p { margin: 22px 0 0; max-width: 900px; font-size: 30px; color: #4a4458; }
+
+.slide.title { justify-content: center; padding: 80px 110px;
+  background: linear-gradient(120deg, var(--sun-soft) 0%, #ffeff2 50%, var(--teal-soft) 100%); }
+.title .eyebrow { align-self: flex-start; padding: 4px 18px; background: var(--paper); border: 2px solid var(--ink);
+  border-radius: 999px; box-shadow: 4px 4px 0 var(--ruby); font: 600 18px/1.6 var(--body); letter-spacing: .05em; text-transform: uppercase; }
+.title h1 { margin: 28px 0 0; font: 700 64px/1.12 var(--display); letter-spacing: -.02em; }
+.title p { margin: 24px 0 0; font-size: 30px; color: #4a4458; max-width: 900px; }
+
+.ruby { --accent: var(--ruby); --accent-soft: var(--ruby-soft); }
+.sun  { --accent: #d18b00; --accent-soft: var(--sun-soft); }
+.teal { --accent: var(--teal); --accent-soft: var(--teal-soft); }
+.plum { --accent: var(--plum); --accent-soft: var(--plum-soft); }
+
+/* Картинки */
+.art { margin: 0; }
+.art img { display: block; width: 100%; height: 100%; object-fit: cover; border: 2px solid var(--ink);
+  border-radius: 26px; box-shadow: 8px 8px 0 var(--accent, var(--plum)); background: var(--paper); }
+.art figcaption { margin-top: 14px; font-size: 14px; line-height: 1.35; color: var(--muted); }
+.divider .art { position: absolute; right: 100px; top: 50%; width: 360px; height: 470px;
+  transform: translateY(-50%) rotate(2deg); }
+.divider.has-art h1, .divider.has-art p { max-width: 640px; }
+.split { display: grid; grid-template-columns: 1fr 300px; gap: 48px; align-items: center; }
+.split .art { height: 400px; }
+.split .art.contain img { object-fit: contain; padding: 18px; }
+
+/* Навигация */
+#hud { position: fixed; right: 18px; bottom: 14px; display: flex; gap: 10px; align-items: center;
+  font: 600 14px var(--body); color: #cfc8dc; user-select: none; }
+#hud button { width: 34px; height: 34px; border: 1px solid #4a4458; border-radius: 50%; background: #2b2538; color: #fff; cursor: pointer; font-size: 16px; }
+#hud button:hover { background: var(--plum); }
+#bar { position: fixed; left: 0; top: 0; height: 4px; background: linear-gradient(90deg, var(--ruby), var(--sun), var(--teal), var(--plum)); transition: width .2s; }
+@media print { #hud, #bar { display: none; } }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+<!-- ========== Титул ========== -->
+<section class="slide title">
+  <div class="eyebrow">ИИ для служения · Урок 4</div>
+  <h1>Продвинутые приёмы<br>веб-чата и промптинг<br>картинок, видео и музыки</h1>
+  <p>От пригодного черновика — к готовым материалам для служения</p>
+</section>
+
+<section class="slide plum">
+  <h2>План урока</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>Повторение</h3>Главное из Урока 3</div>
+      <div class="card"><h3>Декомпозиция</h3>Конвейер подготовки по шагам</div>
+      <div class="card"><h3>Ещё приёмы</h3>Мета-промпт, перегенерация, формат вывода</div>
+      <div class="card"><h3>Картинки</h3>Раскраска к Лк 15:20</div>
+      <div class="card"><h3>Видео</h3>Оживляем иллюстрацию</div>
+      <div class="card"><h3>Музыка</h3>Песня на стих Писания</div>
+      <div class="card"><h3>Презентации</h3>Слайды и раздатка к уроку ВШ</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Коротко из Урока 3</h2>
+  <div class="body">
+    <div class="cards" style="--cols:2">
+      <div class="card"><h3>Шесть блоков</h3>задача, контекст, материалы, роль, формат, критерии</div>
+      <div class="card"><h3>Инвертирование</h3>«Не пиши сразу — задай нумерованные вопросы»</div>
+      <div class="card"><h3>Критика</h3>только в новом чате, по критичности</div>
+      <div class="card"><h3>Гигиена</h3>одна задача = один чат, handoff-бриф</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 3. Картинки ========== -->
+<section class="slide divider teal has-art">
+  <div class="num">3</div>
+  <h1>Промптинг картинок</h1>
+  <p>Свой конструктор<br>Цель — раскраска к Лк 15:20</p>
+  <figure class="art"><img src="lesson-4-img/prodigal-etching.jpg" alt="Офорт Рембрандта: отец обнимает вернувшегося сына"><figcaption>Рембрандт. Возвращение блудного сына, офорт, 1636</figcaption></figure>
+</section>
+
+<section class="slide teal">
+  <h2>Конструктор картинки</h2>
+  <div class="body">
+    <div class="chain"><span>Объект</span><i>→</i><span>Действие</span><i>→</i><span>Место</span><i>→</i><span>Ракурс</span><i>→</i><span>Стиль</span><i>→</i><span>Свет и настроение</span></div>
+    <p class="muted">По гайду Google для Nano Banana</p>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Приёмы</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Сцена <b>предложениями</b>, а не «4k, шедевр, детально»</li>
+      <li>Референс вместо описания стиля — few-shot для картинок</li>
+      <li>Правка в том же чате: «поменяй плащ на синий»</li>
+      <li>Сквозной персонаж: «тот же Давид, теперь…»</li>
+      <li>Текстовый чат пишет промпт для генератора</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Пример · раскраска к Лк 15:20</h2>
+  <div class="body">
+    <div class="prompt" data-label="Шаг 1 · текстовый чат">Опиши для иллюстратора сцену Лк 15:20: отец бежит навстречу сыну. Палестина I века, без средневековья и анахронизмов. Одним абзацем: кто, что делает, где, ракурс, стиль, настроение.</div>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Шаг 2 · генерация с референсом</h2>
+  <div class="body">
+    <div class="prompt small" data-label="+ образец раскраски">В стиле прикреплённой картинки. Пожилой отец в простой тунике и плаще бежит по пыльной дороге, раскинув руки, навстречу худому сыну в рваной одежде, идущему с опущенной головой. Вдали каменный дом с плоской крышей и оливы на холмах. Общий план сбоку, фигуры крупно в центре. Чёрно-белая раскраска для детей 6–8 лет: толстые чистые контуры, крупные детали, белый фон.</div>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Шаги 3–4 · правка и серия</h2>
+  <div class="body">
+    <div class="prompt" data-label="Точечная правка">Сделай лицо отца радостным, а не испуганным. Остальное не меняй.</div>
+    <div class="prompt" data-label="Тот же персонаж">Те же отец и сын в том же стиле: отец надевает на сына перстень и лучшую одежду, слуга держит сандалии.</div>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Спец-сервисы для картинок</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>Recraft</h3>Coloring book / Line Art — чистые раскраски ВШ, иконки, удаление фона</div>
+      <div class="card"><h3>Ideogram</h3>афиши, обложки проповедей, карточки со стихом — читаемый текст</div>
+      <div class="card"><h3>Шедеврум · Kandinsky</h3>бесплатно и без VPN</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 4. Видео ========== -->
+<section class="slide divider ruby has-art">
+  <div class="num">4</div>
+  <h1>Промптинг видео</h1>
+  <p>Свой конструктор</p>
+  <figure class="art"><img src="lesson-4-img/clapper.jpg" alt="Киношная хлопушка на съёмочной площадке"><figcaption>Фото Mattbr, CC BY 2.0</figcaption></figure>
+</section>
+
+<section class="slide ruby">
+  <h2>Конструктор видео</h2>
+  <div class="body">
+    <div class="chain"><span>Стиль</span><i>→</i><span>Камера</span><i>→</i><span>Персонаж</span><i>→</i><span>Одно действие</span><i>→</i><span>Место</span><i>→</i><span>Свет</span><i>→</i><span>Звук</span></div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Правила</h2>
+  <div class="body">
+    <ul class="points">
+      <li><b>1 ролик = 1 план = 1 действие</b> (5–8 секунд)</li>
+      <li>Сначала утвердить картинку → потом оживить</li>
+      <li>Язык камеры: наезд, панорама, облёт, дрон</li>
+      <li>Реплика после двоеточия, <b>без кавычек</b> — иначе станет надписью</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Пример · оживляем Лк 15:20</h2>
+  <div class="body">
+    <div class="prompt small" data-label="Image-to-Video + утверждённый кадр">Мягкая акварельная анимация. Медленный наезд камеры от общего плана к среднему. Пожилой отец бежит по пыльной дороге навстречу сыну и крепко обнимает его — только это действие. Вечер, тёплый золотой свет, длинные тени, оливы на холмах.<br>Звук: ветер, шаги по пыли, далёкое блеяние овец.<br>Отец говорит со слезами в голосе: сын мой вернулся</div>
+    <p class="muted center">Пир в доме — отдельный клип с новым первым кадром</p>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Сервисы для видео</h2>
+  <div class="body">
+    <div class="cards" style="--cols:2">
+      <div class="card"><h3>MiniMax Hailuo</h3>оживить иллюстрацию в 5-секундный футаж; команды камеры <code>[Push in]</code></div>
+      <div class="card"><h3>Qwen Video</h3>прямо в Qwen Chat: текст или картинка → видео</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 5. Музыка ========== -->
+<section class="slide divider sun has-art">
+  <div class="num">5</div>
+  <h1>Промптинг музыки</h1>
+  <p>Песня на стих Писания<br>Пример — Пс 22 «Господь — Пастырь мой»</p>
+  <figure class="art"><img src="lesson-4-img/shepherd.jpg" alt="Плокхорст. Добрый Пастырь"><figcaption>Б. Плокхорст. Добрый Пастырь</figcaption></figure>
+</section>
+
+<section class="slide sun">
+  <h2>Приёмы для Suno</h2>
+  <div class="body">
+    <div class="cards" style="--cols:2">
+      <div class="card"><h3>Стиль</h3>только звучание: жанр, настроение, инструменты, голос, темп</div>
+      <div class="card"><h3>Текст</h3>только слова и метатеги <code>[Verse] [Chorus]</code></div>
+      <div class="card"><h3>Ритм</h3>заранее разбить стих на строки равной длины</div>
+      <div class="card"><h3>Exclude</h3>здесь «не делай» работает штатно</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Пример · Пс 22:1–3 для детей</h2>
+  <div class="body">
+    <div class="prompt small" data-label="Шаг 1 · текстовый чат">Разбей Пс 22:1–3 на строки по 6–8 слогов для детской песни. Слова не меняй и не добавляй. Выдели строку для припева.</div>
+    <div class="prompt small" data-label="Стиль"><pre class="mono">children's worship song, joyful and warm, acoustic guitar,
+soft piano, children's choir, 90 bpm</pre></div>
+    <div class="prompt small" data-label="Exclude"><pre class="mono">electric guitar, rap, heavy drums, autotune</pre></div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Поле «Текст»</h2>
+  <div class="body">
+    <div class="two">
+      <div class="prompt small" data-label="Текст"><pre class="mono">[Verse]
+Господь — Пастырь мой,
+я ни в чём не буду нуждаться.
+Он покоит меня
+на злачных пажитях
+и водит меня к водам тихим.
+
+[Chorus]
+Господь — Пастырь мой!
+Господь — Пастырь мой!</pre></div>
+      <div class="prompt small" data-label="…продолжение"><pre class="mono">[Verse]
+Подкрепляет душу мою,
+направляет меня на стези правды
+ради имени Своего.
+
+[Chorus]
+Господь — Пастырь мой!
+Господь — Пастырь мой!
+
+[Outro]</pre></div>
+    </div>
+    <div class="note">Проверить на слух: все ли слова Писания пропеты без искажений</div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Ещё сервисы для звука</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>Udio</h3>альтернатива Suno: песня на дословный текст или фоновый Instrumental</div>
+      <div class="card"><h3>MiniMax Audio</h3>реалистичная русская озвучка историй по ролям</div>
+      <div class="card"><h3>Vocal Remover</h3>минусовка из любой песни за 10 секунд для детского хора и прославления</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 6. Презентации ========== -->
+<section class="slide divider plum">
+  <div class="num">6</div>
+  <h1>Презентации и раздатки</h1>
+  <p>Конспект → слайды → .pptx и PDF на печать</p>
+</section>
+
+<section class="slide plum">
+  <h2>Три сервиса</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>Kimi Slides</h3>план по слайдам → шаблон → редактируемый .pptx</div>
+      <div class="card"><h3>Z.ai AI Slides</h3>агент сам ищет и верстает; Poster — афиша или памятка</div>
+      <div class="card"><h3>Gamma</h3>10 слайдов за промпт, разовые кредиты; Document — раздатка в PDF</div>
+    </div>
+    <p class="muted center">Лимиты и доступ — проверить на своём аккаунте</p>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Приёмы</h2>
+  <div class="body">
+    <ul class="points">
+      <li><b>Сначала план, потом вёрстка</b> — утвердить тезисы текстом</li>
+      <li>Один слайд = одна мысль, ≤ 15 слов, остальное — в заметки</li>
+      <li>Зал и проектор: аудитория, число слайдов, крупный шрифт</li>
+      <li>Проверить картинки: сток, анахронизмы, средневековье</li>
+      <li>Открыть .pptx дома, а не в зале — вёрстка «плывёт»</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Пример · урок ВШ по Лк 15</h2>
+  <div class="body">
+    <div class="prompt small" data-label="Kimi Slides + конспект">Сделай презентацию из 8 слайдов к уроку воскресной школы для детей 8–10 лет по Лк 15:11–32 по прикреплённому конспекту. Один слайд — одна мысль, не больше 15 слов, крупный шрифт для проектора. Стихи цитируй дословно по Синодальному переводу со ссылкой. Последний слайд — 3 вопроса для обсуждения. Подробности — в заметки докладчика. Сначала покажи план, я его утвержу.</div>
+    <p class="muted center">+ своя раскраска к Лк 15:20 на нужный слайд</p>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Раздатка для родителей</h2>
+  <div class="body">
+    <div class="prompt" data-label="Gamma Document / Z.ai Poster">По этой презентации сделай раздатку А4 для родителей: краткий пересказ притчи, золотой стих Лк 15:20, 3 вопроса для разговора дома, место для рисунка ребёнка.</div>
+    <div class="note">Стихи и картинки сверить до печати</div>
+  </div>
+</section>
+
+<!-- ========== 7. Практика ========== -->
+<section class="slide divider teal">
+  <div class="num">7</div>
+  <h1>Практика</h1>
+  <p>Свой ближайший отрывок — через полный цикл</p>
+</section>
+
+<section class="slide teal">
+  <h2>Домашнее задание</h2>
+  <div class="body">
+    <ol class="steps">
+      <li>Инвертирование чата: ответить на вопросы ИИ</li>
+      <li>Собрать структуру по своему эталону (few-shot)</li>
+      <li>Критика глазами разных слушателей — в новом чате</li>
+      <li>Проверка ссылок на стихи в новом чате</li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide title">
+  <h1>ИИ пишет черновик.<br>Проверяет человек.</h1>
+  <p>Вопросы?</p>
+</section>
+
+</div>
+
+<div id="hud">
+  <button id="prev" aria-label="Назад">‹</button>
+  <span id="counter"></span>
+  <button id="next" aria-label="Вперёд">›</button>
+  <button id="full" aria-label="Во весь экран">⛶</button>
+</div>
+
+<script>
+const stage = document.getElementById('stage');
+const slides = [...stage.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+const bar = document.getElementById('bar');
+let current = 0;
+
+function show(n) {
+  current = Math.max(0, Math.min(slides.length - 1, n));
+  slides.forEach((s, k) => s.classList.toggle('active', k === current));
+  counter.textContent = `${current + 1} / ${slides.length}`;
+  bar.style.width = `${(current + 1) / slides.length * 100}%`;
+  history.replaceState(null, '', `#${current + 1}`);
+}
+
+function fit() {
+  const scale = Math.min(innerWidth / 1280, innerHeight / 720);
+  stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+}
+
+document.addEventListener('keydown', e => {
+  if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(current + 1); }
+  else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(current - 1); }
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') show(slides.length - 1);
+  else if (e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') toggleFull();
+});
+
+stage.addEventListener('click', e => {
+  if (getSelection().toString()) return;
+  const r = stage.getBoundingClientRect();
+  show(e.clientX > r.left + r.width / 2 ? current + 1 : current - 1);
+});
+
+function toggleFull() {
+  document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+}
+
+document.getElementById('prev').onclick = () => show(current - 1);
+document.getElementById('next').onclick = () => show(current + 1);
+document.getElementById('full').onclick = toggleFull;
+addEventListener('resize', fit);
+
+fit();
+show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+</script>
+</body>
+</html>
