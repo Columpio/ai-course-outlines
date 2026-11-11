@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" role="img" aria-label="Витраж: картинка, видео и музыка">
+  <defs>
+    <clipPath id="arch"><path d="M70 380V170C70 80 140 30 240 22C340 30 410 80 410 170V380Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#arch)">
+    <rect x="60" y="0" width="360" height="400" fill="#FEF3D9"/>
+    <circle cx="240" cy="90" r="100" fill="#FDE8EB"/>
+    <path d="M70 380L240 140L410 380Z" fill="#DDF4F0" opacity=".7"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linejoin="round">
+    <rect x="104" y="96" width="150" height="116" rx="10" fill="#fff"/>
+    <path d="M104 190L150 146L190 182L214 160L254 198V202Q254 212 244 212H114Q104 212 104 202Z" fill="#1FA79A"/>
+    <circle cx="212" cy="128" r="14" fill="#F7B32B"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linejoin="round">
+    <rect x="214" y="232" width="164" height="110" rx="12" fill="#E0455B"/>
+    <path d="M214 258H378M214 316H378" fill="none"/>
+    <path d="M276 266L276 308L314 287Z" fill="#FEF3D9"/>
+  </g>
+  <g fill="#241F31">
+    <rect x="226" y="242" width="12" height="8" rx="2"/><rect x="250" y="242" width="12" height="8" rx="2"/><rect x="274" y="242" width="12" height="8" rx="2"/><rect x="298" y="242" width="12" height="8" rx="2"/><rect x="322" y="242" width="12" height="8" rx="2"/><rect x="346" y="242" width="12" height="8" rx="2"/>
+    <rect x="226" y="324" width="12" height="8" rx="2"/><rect x="250" y="324" width="12" height="8" rx="2"/><rect x="274" y="324" width="12" height="8" rx="2"/><rect x="298" y="324" width="12" height="8" rx="2"/><rect x="322" y="324" width="12" height="8" rx="2"/><rect x="346" y="324" width="12" height="8" rx="2"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M140 330V250L196 238V318" fill="none" stroke-width="6"/>
+    <path d="M140 250L196 238V256L140 268Z" fill="#241F31"/>
+    <ellipse cx="126" cy="332" rx="17" ry="13" fill="#7B4AA3"/>
+    <ellipse cx="182" cy="320" rx="17" ry="13" fill="#7B4AA3"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" fill="#7B4AA3">
+    <path d="M330 92L338 114L360 122L338 130L330 152L322 130L300 122L322 114Z"/>
+  </g>
+  <path d="M70 380V170C70 80 140 30 240 22C340 30 410 80 410 170V380Z" fill="none" stroke="#241F31" stroke-width="7" stroke-linejoin="round"/>
+  <rect x="50" y="380" width="380" height="14" rx="3" fill="#241F31"/>
+</svg>

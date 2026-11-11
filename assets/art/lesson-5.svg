@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" role="img" aria-label="Витраж: агентский цикл — модель, инструменты и проверка">
+  <defs>
+    <clipPath id="arch"><path d="M70 380V170C70 80 140 30 240 22C340 30 410 80 410 170V380Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#arch)">
+    <rect x="60" y="0" width="360" height="400" fill="#FDE8EB"/>
+    <circle cx="240" cy="220" r="150" fill="#EFE6F7"/>
+    <circle cx="240" cy="220" r="70" fill="#FEF3D9"/>
+  </g>
+  <g fill="none" stroke="#241F31" stroke-width="6" stroke-linecap="round">
+    <path d="M172 140A110 110 0 0 1 320 150"/>
+    <path d="M346 250A110 110 0 0 1 250 329"/>
+    <path d="M178 318A110 110 0 0 1 132 200"/>
+  </g>
+  <g fill="#241F31">
+    <path d="M330 136L334 166L306 156Z"/>
+    <path d="M238 318L262 340L232 344Z"/>
+    <path d="M118 212L130 184L146 206Z"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linejoin="round">
+    <circle cx="240" cy="220" r="40" fill="#7B4AA3"/>
+    <circle cx="226" cy="212" r="7" fill="#FEF3D9"/>
+    <circle cx="254" cy="212" r="7" fill="#FEF3D9"/>
+    <path d="M224 234Q240 246 256 234" fill="none" stroke="#FEF3D9" stroke-linecap="round"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linejoin="round">
+    <circle cx="150" cy="122" r="30" fill="#E0455B"/>
+    <circle cx="368" cy="232" r="30" fill="#F7B32B"/>
+    <circle cx="158" cy="330" r="30" fill="#1FA79A"/>
+  </g>
+  <g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M136 112L148 122L136 132M152 134H166"/>
+    <path d="M144 330L154 340L174 318"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M354 246L376 224" fill="none"/>
+    <path d="M372 214A12 12 0 1 0 386 230L380 224L376 228L370 222L374 218Z" fill="#fff"/>
+  </g>
+  <path d="M70 380V170C70 80 140 30 240 22C340 30 410 80 410 170V380Z" fill="none" stroke="#241F31" stroke-width="7" stroke-linejoin="round"/>
+  <rect x="50" y="380" width="380" height="14" rx="3" fill="#241F31"/>
+</svg>
