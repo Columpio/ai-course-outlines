@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Урок 6. ИИ-агенты: сжатие контекста, субагенты, правила, навыки и стоимость</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #241f31; --muted: #6a6478; --line: #e9e3f0; --paper: #fff; --tint: #faf7fd;
+  --ruby: #e0455b; --sun: #f7b32b; --teal: #1fa79a; --plum: #7b4aa3;
+  --ruby-soft: #fde8eb; --sun-soft: #fef3d9; --teal-soft: #ddf4f0; --plum-soft: #efe6f7;
+  --ok: #16794c; --ok-bg: #e1f5ea; --bad: #b42335; --bad-bg: #fde7ea;
+  --display: "Unbounded", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --arch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 18'%3E%3Cpath d='M0 18V9Q0 2 6 0Q12 2 12 9V18Z' fill='%23E0455B'/%3E%3Cpath d='M12 18V9Q12 2 18 0Q24 2 24 9V18Z' fill='%23F7B32B'/%3E%3Cpath d='M24 18V9Q24 2 30 0Q36 2 36 9V18Z' fill='%231FA79A'/%3E%3Cpath d='M36 18V9Q36 2 42 0Q48 2 48 9V18Z' fill='%237B4AA3'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1724; }
+body { font-family: var(--body); color: var(--ink); }
+
+#stage { position: absolute; top: 50%; left: 50%; width: 1280px; height: 720px;
+  transform-origin: center center; background: var(--paper); overflow: hidden; }
+
+.slide { position: absolute; inset: 0; display: none; flex-direction: column;
+  padding: 56px 80px 64px; font-size: 27px; line-height: 1.45; }
+.slide.active { display: flex; animation: fade .25s ease-out; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.slide::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 18px;
+  background: var(--arch) repeat-x left bottom / 48px 18px; }
+
+.slide h2 { margin: 0 0 32px; font: 700 40px/1.2 var(--display); letter-spacing: -.01em; }
+.slide h2 .tag { display: inline-block; margin-right: 14px; padding: 2px 14px; border: 2px solid var(--ink);
+  border-radius: 999px; font: 600 18px/1.6 var(--body); vertical-align: middle; letter-spacing: .03em; }
+.slide h2 .tag.demo { background: var(--accent, var(--plum)); border-color: var(--accent, var(--plum)); color: #fff; }
+.body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+
+ul.points { margin: 0; padding: 0; list-style: none; display: grid; gap: 20px; }
+ul.points li { position: relative; padding-left: 40px; }
+ul.points li::before { content: ""; position: absolute; left: 4px; top: .42em; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--accent, var(--plum)); }
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 16px; }
+ol.steps li { counter-increment: s; position: relative; padding-left: 60px; }
+ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 42px; height: 42px;
+  border: 2px solid var(--ink); border-radius: 50%; background: var(--sun-soft);
+  font: 700 20px/38px var(--display); text-align: center; }
+b, strong { font-weight: 700; }
+.muted { color: var(--muted); }
+.big { font: 700 46px/1.25 var(--display); }
+.center { text-align: center; }
+
+.prompt { position: relative; padding: 22px 28px 22px; background: var(--tint); border: 2px solid var(--ink);
+  border-radius: 18px; box-shadow: 6px 6px 0 var(--accent, var(--plum)); font-size: 23px; line-height: 1.5; }
+.prompt::before { content: attr(data-label); position: absolute; top: -15px; left: 22px; padding: 1px 12px;
+  background: var(--ink); color: #fff; border-radius: 999px; font: 600 14px/1.8 var(--body); letter-spacing: .05em; text-transform: uppercase; }
+.prompt.small { font-size: 20px; }
+.prompt .sec { display: block; margin-top: 10px; font: 700 15px/1.6 var(--display); color: var(--accent, var(--plum)); letter-spacing: .04em; }
+.prompt .sec:first-child { margin-top: 0; }
+pre.mono { margin: 0; font: 18px/1.45 ui-monospace, "Cascadia Mono", Consolas, monospace; white-space: pre-wrap; }
+
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.vs > div { padding: 22px 26px; border-radius: 18px; font-size: 24px; }
+.vs .bad { background: var(--bad-bg); }
+.vs .good { background: var(--ok-bg); }
+.vs .bad::before, .vs .good::before { display: block; margin-bottom: 8px; font: 700 16px/1.4 var(--display); letter-spacing: .05em; }
+.vs .bad::before { content: "✗  ТАК"; color: var(--bad); }
+.vs .good::before { content: "✓  ЛУЧШЕ"; color: var(--ok); }
+.vs[data-labels] .bad::before { content: attr(data-l); }
+.vs[data-labels] .good::before { content: attr(data-l); }
+
+.cards { display: grid; grid-template-columns: repeat(var(--cols, 3), 1fr); gap: 20px; }
+.card { padding: 20px 22px; border: 2px solid var(--ink); border-radius: 18px; background: var(--paper); font-size: 22px; line-height: 1.4; }
+.card h3 { margin: 0 0 8px; font: 700 19px/1.3 var(--display); color: var(--accent, var(--plum)); }
+.card:nth-child(4n+1) { box-shadow: 5px 5px 0 var(--ruby); }
+.card:nth-child(4n+2) { box-shadow: 5px 5px 0 var(--sun); }
+.card:nth-child(4n+3) { box-shadow: 5px 5px 0 var(--teal); }
+.card:nth-child(4n+4) { box-shadow: 5px 5px 0 var(--plum); }
+
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 10px; }
+.chain span { padding: 12px 20px; border: 2px solid var(--ink); border-radius: 999px; background: var(--accent-soft, var(--plum-soft)); font-weight: 600; font-size: 24px; }
+.chain i { font-style: normal; color: var(--muted); font-size: 26px; }
+
+.note { padding: 16px 22px; border-left: 6px solid var(--accent, var(--plum)); background: var(--accent-soft, var(--plum-soft));
+  border-radius: 0 14px 14px 0; font-size: 23px; }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
+
+.scale { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.scale > div { padding: 22px 24px; border-radius: 18px; font-size: 22px; line-height: 1.4; }
+.scale h3 { margin: 0 0 10px; font: 700 19px/1.3 var(--display); }
+.scale .safe { background: var(--ok-bg); } .scale .safe h3 { color: var(--ok); }
+.scale .fix { background: var(--sun-soft); } .scale .fix h3 { color: #a86c00; }
+.scale .gone { background: var(--bad-bg); } .scale .gone h3 { color: var(--bad); }
+
+.slide.divider { justify-content: center; padding: 80px 110px; background: var(--accent-soft, var(--plum-soft)); }
+.divider .num { font: 700 150px/1 var(--display); color: var(--accent); text-shadow: 6px 6px 0 var(--ink); }
+.divider h1 { margin: 18px 0 0; font: 700 56px/1.15 var(--display); letter-spacing: -.015em; }
+.divider p { margin: 22px 0 0; max-width: 900px; font-size: 30px; color: #4a4458; }
+
+.slide.title { justify-content: center; padding: 80px 110px;
+  background: linear-gradient(120deg, var(--sun-soft) 0%, #ffeff2 50%, var(--teal-soft) 100%); }
+.title .eyebrow { align-self: flex-start; padding: 4px 18px; background: var(--paper); border: 2px solid var(--ink);
+  border-radius: 999px; box-shadow: 4px 4px 0 var(--ruby); font: 600 18px/1.6 var(--body); letter-spacing: .05em; text-transform: uppercase; }
+.title h1 { margin: 28px 0 0; font: 700 64px/1.12 var(--display); letter-spacing: -.02em; }
+.title p { margin: 24px 0 0; font-size: 30px; color: #4a4458; max-width: 900px; }
+
+.ruby { --accent: var(--ruby); --accent-soft: var(--ruby-soft); }
+.sun  { --accent: #d18b00; --accent-soft: var(--sun-soft); }
+.teal { --accent: var(--teal); --accent-soft: var(--teal-soft); }
+.plum { --accent: var(--plum); --accent-soft: var(--plum-soft); }
+
+#hud { position: fixed; right: 18px; bottom: 14px; display: flex; gap: 10px; align-items: center;
+  font: 600 14px var(--body); color: #cfc8dc; user-select: none; }
+#hud button { width: 34px; height: 34px; border: 1px solid #4a4458; border-radius: 50%; background: #2b2538; color: #fff; cursor: pointer; font-size: 16px; }
+#hud button:hover { background: var(--plum); }
+#bar { position: fixed; left: 0; top: 0; height: 4px; background: linear-gradient(90deg, var(--ruby), var(--sun), var(--teal), var(--plum)); transition: width .2s; }
+@media print { #hud, #bar { display: none; } }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+
+<!-- ========== Титул ========== -->
+<section class="slide title">
+  <div class="eyebrow">ИИ для служения · Урок 6</div>
+  <h1>ИИ-агенты: сжатие контекста, субагенты, правила, навыки и стоимость</h1>
+  <p>Заглядываем внутрь агента: как он не «забывает», кому поручает работу и сколько это стоит</p>
+</section>
+
+<section class="slide plum">
+  <h2>План урока</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>1 · Права</h3>повторение и режимы разрешений</div>
+      <div class="card"><h3>2 · Контекст</h3>окно и его сжатие</div>
+      <div class="card"><h3>3 · Субагенты</h3>критика, ревью ревью, параллельная работа</div>
+      <div class="card"><h3>4 · Настройка</h3>правила, навыки, память</div>
+      <div class="card"><h3>5 · Стоимость</h3>подписка, токены, лимиты</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 1. Права ========== -->
+<section class="slide divider plum">
+  <div class="num">1</div>
+  <h1>Повторение и права агента</h1>
+  <p>Агент — цикл поверх модели</p>
+</section>
+
+<section class="slide plum">
+  <h2>Вспоминаем Урок 5</h2>
+  <div class="body">
+    <div class="chain"><span>Запрос</span><i>→</i><span>Модель думает</span><i>→</i><span>Инструмент</span><i>→</i><span>Снова думает</span><i>→</i><span>Результат</span></div>
+    <ul class="points">
+      <li>Промптинг как в чате + <b>критерий остановки</b> и <b>доступы</b></li>
+      <li>Права ограничивает обвязка, а не промпт</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2><span class="tag demo">Агент автора</span>Четыре режима разрешений</h2>
+  <div class="body">
+    <div class="cards" style="--cols:2">
+      <div class="card"><h3>Default</h3>модель сама решает, что опасно, и тогда спрашивает</div>
+      <div class="card"><h3>Paranoid</h3>спрашивает обо всём, кроме чтения</div>
+      <div class="card"><h3>YOLO</h3>делает всё, не спрашивая. Самый популярный</div>
+      <div class="card"><h3>AFK</h3>сам отвечает на свои вопросы и пишет «продолжай». Задача на ночь</div>
+    </div>
+    <p class="muted center">Переключение — Shift+Tab. У Мультитула режимов три</p>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Как агенты ошибаются</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Выдумки и зацикливание со сжиганием лимитов</li>
+      <li>Ложный отчёт: «я всё проверил, братан» — а в журнале проверки нет</li>
+      <li>Безопасность и инъекции</li>
+    </ul>
+    <div class="note">Приходится писать агенту «продолжай»? Модель слабая</div>
+  </div>
+</section>
+
+<!-- ========== 2. Контекст ========== -->
+<section class="slide divider teal">
+  <div class="num">2</div>
+  <h1>Контекстное окно и сжатие</h1>
+  <p>«Дверной проём» для данных</p>
+</section>
+
+<section class="slide teal">
+  <h2>Контекстное окно ограничено</h2>
+  <div class="body">
+    <ul class="points">
+      <li>В окно входит и то, что модель получает, и то, что выдаёт</li>
+      <li>Агент автора: окно 1 млн токенов, заполнено 18%</li>
+      <li>Мультитул: кольцо «заполнено 37%» без полного размера</li>
+      <li>Ответы инструментов длиннее ваших сообщений — окно заполняется бодро</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Три способа сжатия</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>Выкинуть начало</h3>для тех, кто решает в одном чате много задач</div>
+      <div class="card"><h3>Выкинуть середину</h3>костяк задачи в начале, мелкие правки уже не важны</div>
+      <div class="card"><h3>Summary</h3>модель сама пишет краткое изложение — им заменяется переписка</div>
+    </div>
+    <div class="note">Summary — сегодняшний стандарт: автоматический handoff из Урока 3. Минус — тратит лимиты</div>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2><span class="tag demo">Мультитул</span>«Сессия сжата»</h2>
+  <div class="body">
+    <div class="chain"><span>13 минут работы</span><i>→</i><span>«Сессия сжата»</span><i>→</i><span>Модель видит только summary</span></div>
+    <div class="note">Иллюзия: в интерфейсе вся переписка, а модель её уже не видит</div>
+  </div>
+</section>
+
+<section class="slide teal">
+  <h2>Новая задача — новый чат</h2>
+  <div class="body">
+    <div class="vs">
+      <div class="bad">Домашка, финансы и сайт в одном чате — плов с бензином в одном котле</div>
+      <div class="good">Одна задача — один чат, даже если агент умеет жить в чате бесконечно</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 3. Субагенты ========== -->
+<section class="slide divider ruby">
+  <div class="num">3</div>
+  <h1>Субагенты</h1>
+  <p>Агент, которого запускает ваш агент</p>
+</section>
+
+<section class="slide ruby">
+  <h2>Субагент = агент на побегушках</h2>
+  <div class="body">
+    <div class="chain"><span>Ваш агент</span><i>→</i><span>Невидимый новый чат</span><i>→</i><span>Сам пишет промпт</span><i>→</i><span>Короткий отчёт</span></div>
+    <div class="note">Мечтали стать лучшими промптерами — оказалось, модель промптит себя лучше нас</div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Рецензенты для урока ВШ</h2>
+  <div class="body">
+    <div class="prompt small" data-label="Запрос">Запусти параллельно субагентов-ревьюеров, пусть посмотрят слайды с разных сторон. Сама предложи, кого ещё запустить</div>
+    <div class="cards" style="--cols:3">
+      <div class="card">Неверующий ребёнок: что непонятно</div>
+      <div class="card">Верующий ребёнок: всё знакомо</div>
+      <div class="card">Усталый ДВР</div>
+      <div class="card">Учитель ВШ: чего не хватает</div>
+      <div class="card">Богослов: нет ли косяков</div>
+      <div class="card">+ предложит сам агент</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2><span class="tag demo">Мультитул</span>Чат внутри чата</h2>
+  <div class="body">
+    <ol class="steps">
+      <li>Пишем «используя субагентов»</li>
+      <li>В журнале значок робота — клик открывает под-чат</li>
+      <li>Субагент пишет отчёт: находки критичные и некритичные</li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Субагент — как инструмент</h2>
+  <div class="body">
+    <div class="two">
+      <div class="card"><h3>read</h3>получает имя файла → возвращает файл</div>
+      <div class="card"><h3>Субагент</h3>получает задачу текстом → возвращает короткий итог</div>
+    </div>
+    <p class="muted center">Главный агент «переваривает» итог и работает дальше</p>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2><span class="tag demo">Агент автора</span>Code Review Orchestrated</h2>
+  <div class="body">
+    <ol class="steps">
+      <li>Спрашивает, что проверять</li>
+      <li>Сам изучает проект и предлагает рецензентов: факты, вёрстка, дубли, следы ИИ</li>
+      <li>Ставит задачу: «не редактируй, каждую находку — с severity»</li>
+    </ol>
+    <p class="muted center">Модель сама применяет техники промптинга с наших уроков</p>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Ревью ревью</h2>
+  <div class="body">
+    <div class="chain"><span>Рецензенты</span><i>→</i><span>Находки</span><i>→</i><span>Валидаторы</span><i>→</i><span>Только реальные</span></div>
+    <div class="note">Рецензент тоже галлюцинирует. Без навыка — руками: «запусти субагента, пусть проверит, реальны ли находки»</div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Кто проверит проверяющего?</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Физика: мир существует, законы одинаковы завтра и на Альфе Центавра</li>
+      <li>Математика: аксиомы Евклида</li>
+    </ul>
+    <p class="big center">Любое знание стартует с веры</p>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Чистый контекст или форк</h2>
+  <div class="body">
+    <div class="vs" data-labels>
+      <div class="good" data-l="ЧИСТЫЙ СУБАГЕНТ">Только задача и короткий итог. Для критики</div>
+      <div class="bad" data-l="ФОРК">Копия всего чата + задача. Для массовых параллельных задач, не для ревью</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Параллельный ресёрч</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>Документы</h3>аудитория, боли, акценты</div>
+      <div class="card"><h3>Конкуренты</h3>гуглит и собирает таблицу</div>
+      <div class="card"><h3>Код</h3>какие функции уже есть</div>
+    </div>
+    <div class="note">Книга, курсовая, отчёт: последовательно — «сто лет», параллельно — «один год»</div>
+  </div>
+</section>
+
+<section class="slide ruby">
+  <h2>Скорость против лимитов</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>Прототип</h3>быстро и итерациями</div>
+      <div class="card"><h3>Волна ревьюеров</h3>когда нужно качество</div>
+      <div class="card"><h3>Ревью + валидация</h3>результат критичен, вычитывать некогда</div>
+    </div>
+    <p class="muted center">В бесплатных веб-чатах субагентов нет — слишком дорого</p>
+  </div>
+</section>
+
+<!-- ========== 4. Настройка ========== -->
+<section class="slide divider sun">
+  <div class="num">4</div>
+  <h1>Правила, навыки, память</h1>
+  <p>Костыли на случай, когда ИИ делает не то</p>
+</section>
+
+<section class="slide sun">
+  <h2>Правило — просто кусок промпта</h2>
+  <div class="body">
+    <div class="chain"><span>Системный промпт</span><i>+</i><span>Инструменты</span><i>+</i><span>Правила</span><i>+</i><span>Ваш запрос</span></div>
+    <div class="note">Авторы впишут «рекомендуй продукты Сбера» — и лучший кредит на рынке окажется у Сбера</div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2><span class="tag demo">Мультитул</span>Правило против тире</h2>
+  <div class="body">
+    <div class="prompt small" data-label="Правило">Никогда не пиши длинное тире и кавычки-ёлочки</div>
+    <ul class="points">
+      <li>Тире и ёлочки — грамотная русская типографика, а не «признак ИИ»</li>
+      <li>В одном чате модель послушалась, в другом — нет: слабые модели игнорируют правила</li>
+      <li>Повторите правило несколько раз — послушается чаще</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Полезные правила</h2>
+  <div class="body">
+    <ul class="points">
+      <li>«Всегда Синодальный перевод»</li>
+      <li>«Обращайся на вы»</li>
+      <li>«Будь вежливым, делай мне комплименты» — потребность в тепле заложил Бог</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Навык: описание всегда в промпте</h2>
+  <div class="body">
+    <ol class="steps">
+      <li>Имена и короткие описания навыков — в каждом чате</li>
+      <li>Задача подходит → полный текст подгружается</li>
+      <li>Вручную: <b>/имя-навыка</b> (в Мультитуле ещё через @)</li>
+    </ol>
+    <div class="note">Описание пишите коротким: оно тратит лимиты во всех чатах</div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Навык = длинный промпт одной фразой</h2>
+  <div class="body">
+    <div class="vs" data-labels>
+      <div class="bad" data-l="БЕЗ НАВЫКА">Каждый раз расписывать: изучи проект, предложи рецензентов, проверь находки…</div>
+      <div class="good" data-l="С НАВЫКОМ">Один вызов. Внутри шаги, примеры, приёмочный чек-лист</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Где брать навыки</h2>
+  <div class="body">
+    <div class="cards" style="--cols:2">
+      <div class="card"><h3>skills.sh</h3>каталог: больше миллиона навыков</div>
+      <div class="card"><h3>find-skills</h3>агент сам ищет и ставит нужные</div>
+      <div class="card"><h3>grill-me</h3>«прожарка» идеи против поддакивания</div>
+      <div class="card"><h3>frontend-design</h3>сайт не выдаёт с первого взгляда, что его сделал ИИ</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2>Долговременная память</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Те же правила, только агент пополняет их сам</li>
+      <li>Не нужно объяснять одно и то же по десять раз</li>
+    </ul>
+    <div class="note">Мультитул: «запомни, меня зовут Юра» → в новом чате не вспомнил, содержимое памяти не посмотреть</div>
+  </div>
+</section>
+
+<section class="slide sun">
+  <h2><span class="tag demo">Мультитул</span>Агент настраивает себя</h2>
+  <div class="body">
+    <div class="prompt" data-label="Запрос">Создай навык для написания шуток</div>
+    <ol class="steps">
+      <li>Агент применяет навык создания навыков</li>
+      <li>Дальше — «поправь то-то». Так же с правилами</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ========== 5. Стоимость ========== -->
+<section class="slide divider plum">
+  <div class="num">5</div>
+  <h1>Модели, лимиты и стоимость</h1>
+  <p>Чатов много и они бесплатны, агенты почти все платные</p>
+</section>
+
+<section class="slide plum">
+  <h2>Подписка или токены</h2>
+  <div class="body">
+    <div class="vs" data-labels>
+      <div class="good" data-l="ПОДПИСКА">N запросов за 5 часов, неделю, месяц. Кончились — ждать или докупать в 10–20 раз дороже</div>
+      <div class="bad" data-l="ОПЛАТА ЗА ТОКЕНЫ">Платите за каждый токен. Чем дольше агент работал, тем дороже</div>
+    </div>
+    <p class="muted center">При активной работе — от 100–200 $ в месяц</p>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Лимиты подписки непрозрачны</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Anthropic и OpenAI не пишут точный лимит</li>
+      <li>Сегодня 100, завтра 50, у соседа 500 — A/B-тестирование</li>
+      <li>Мультитул: «осталось 100%», обновление через 15 часов</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Цена за миллион токенов</h2>
+  <div class="body">
+    <p class="big center">5 $ вход · 25 $ выход</p>
+    <ul class="points">
+      <li>Выход дороже, и его длину решаете не вы</li>
+      <li>«Война и мир» в правилах попадёт в каждый чат</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Общий лимит тратится по-разному</h2>
+  <div class="body">
+    <div class="cards" style="--cols:3">
+      <div class="card"><h3>Opus</h3>съест 5-часовое окно минут за 15</div>
+      <div class="card"><h3>Sonnet</h3>часа за 4</div>
+      <div class="card"><h3>Haiku</h3>не дойдёт до конца</div>
+    </div>
+    <p class="muted center">Цифры условные. В Мультитуле лимиты раздельные по моделям</p>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Бесплатное — значит продукт вы</h2>
+  <div class="body">
+    <ul class="points">
+      <li>Написать в бесплатный сервис — как прокричать с крыши</li>
+      <li>На этом обучат следующие модели</li>
+      <li>Платные обычно обещают не обучаться и не хранить</li>
+      <li>Файлы держать у себя: сервис может закрыться</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Что доступно из России</h2>
+  <div class="body">
+    <div class="two">
+      <div class="card"><h3>Без VPN</h3>Мультитул; агенты Kimi, Z.ai, Qwen (платные); GigaCode для программистов</div>
+      <div class="card"><h3>VPN и зарубежная карта</h3>Claude Code, OpenAI Codex — на голову выше</div>
+    </div>
+    <div class="note">Алиса AI, по мнению автора, не агент. Подобрать под себя — спросить ИИ</div>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2><span class="tag demo">Мультитул</span>OpenRouter и свой ключ</h2>
+  <div class="body">
+    <div class="chain"><span>Пополнить OpenRouter</span><i>→</i><span>Любая модель</span><i>→</i><span>Списание по её цене</span></div>
+    <ol class="steps">
+      <li>Настройки → Модели → добавить свою</li>
+      <li>Вставить API-ключ, полученный после оплаты</li>
+    </ol>
+    <p class="muted center">Лидер по использованию — DeepSeek: дёшево и достаточно умно</p>
+  </div>
+</section>
+
+<section class="slide plum">
+  <h2>Вопрос: подписка Gemini</h2>
+  <div class="body">
+    <div class="note">В подписку, скорее всего, уже входит агент Google — Antigravity</div>
+    <p class="big center">Уже платите — спросите чат, что входит, и пользуйтесь</p>
+  </div>
+</section>
+
+<section class="slide title">
+  <h1>Сжать, поручить, настроить —<br>и считать лимиты.</h1>
+  <p>Вопросы?</p>
+</section>
+
+</div>
+
+<div id="hud">
+  <button id="prev" aria-label="Назад">‹</button>
+  <span id="counter"></span>
+  <button id="next" aria-label="Вперёд">›</button>
+  <button id="full" aria-label="Во весь экран">⛶</button>
+</div>
+
+<script>
+const stage = document.getElementById('stage');
+const slides = [...stage.querySelectorAll('.slide')];
+const counter = document.getElementById('counter');
+const bar = document.getElementById('bar');
+let current = 0;
+
+function show(n) {
+  current = Math.max(0, Math.min(slides.length - 1, n));
+  slides.forEach((s, k) => s.classList.toggle('active', k === current));
+  counter.textContent = `${current + 1} / ${slides.length}`;
+  bar.style.width = `${(current + 1) / slides.length * 100}%`;
+  history.replaceState(null, '', `#${current + 1}`);
+}
+
+function fit() {
+  const scale = Math.min(innerWidth / 1280, innerHeight / 720);
+  stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+}
+
+document.addEventListener('keydown', e => {
+  if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(current + 1); }
+  else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(current - 1); }
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') show(slides.length - 1);
+  else if (e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') toggleFull();
+});
+
+stage.addEventListener('click', e => {
+  if (getSelection().toString()) return;
+  const r = stage.getBoundingClientRect();
+  show(e.clientX > r.left + r.width / 2 ? current + 1 : current - 1);
+});
+
+function toggleFull() {
+  document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+}
+
+document.getElementById('prev').onclick = () => show(current - 1);
+document.getElementById('next').onclick = () => show(current + 1);
+document.getElementById('full').onclick = toggleFull;
+addEventListener('resize', fit);
+
+fit();
+show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+</script>
+</body>
+</html>

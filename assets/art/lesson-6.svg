@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 400" role="img" aria-label="Витраж: главный агент поручает работу трём субагентам — лупа, галочка и отчёт, — а под ними сжатая гармошкой лента контекста">
+  <defs>
+    <clipPath id="arch"><path d="M70 380V170C70 80 140 30 240 22C340 30 410 80 410 170V380Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#arch)">
+    <rect x="60" y="0" width="360" height="400" fill="#DDF4F0"/>
+    <circle cx="240" cy="170" r="150" fill="#EFE6F7"/>
+    <circle cx="240" cy="240" r="72" fill="#FDE8EB"/>
+  </g>
+  <g fill="none" stroke="#241F31" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12">
+    <path d="M212 212L160 160"/>
+    <path d="M240 198V130"/>
+    <path d="M268 212L320 160"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linejoin="round">
+    <circle cx="140" cy="140" r="30" fill="#E0455B"/>
+    <circle cx="240" cy="100" r="30" fill="#F7B32B"/>
+    <circle cx="340" cy="140" r="30" fill="#1FA79A"/>
+  </g>
+  <g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="136" cy="136" r="10"/>
+    <path d="M143 143L153 153"/>
+    <path d="M227 100L237 110L254 91"/>
+    <path d="M327 130H353M327 140H353M327 150H343"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linejoin="round">
+    <circle cx="240" cy="240" r="42" fill="#7B4AA3"/>
+    <circle cx="226" cy="232" r="7" fill="#FEF3D9"/>
+    <circle cx="254" cy="232" r="7" fill="#FEF3D9"/>
+    <path d="M224 254Q240 266 256 254" fill="none" stroke="#FEF3D9" stroke-linecap="round"/>
+  </g>
+  <g stroke="#241F31" stroke-width="4" stroke-linejoin="round">
+    <path d="M150 314L180 324V360L150 350Z" fill="#FEF3D9"/>
+    <path d="M180 324L210 314V350L180 360Z" fill="#F7B32B"/>
+    <path d="M210 314L240 324V360L210 350Z" fill="#FEF3D9"/>
+    <path d="M240 324L270 314V350L240 360Z" fill="#F7B32B"/>
+    <path d="M270 314L300 324V360L270 350Z" fill="#FEF3D9"/>
+    <path d="M300 324L330 314V350L300 360Z" fill="#F7B32B"/>
+  </g>
+  <g fill="none" stroke="#241F31" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M100 337H134M124 327L136 337L124 347"/>
+    <path d="M380 337H346M356 327L344 337L356 347"/>
+  </g>
+  <path d="M70 380V170C70 80 140 30 240 22C340 30 410 80 410 170V380Z" fill="none" stroke="#241F31" stroke-width="7" stroke-linejoin="round"/>
+  <rect x="50" y="380" width="380" height="14" rx="3" fill="#241F31"/>
+</svg>
